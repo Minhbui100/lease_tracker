@@ -1,0 +1,108 @@
+lease tracker
+function: manage properties, tenants, leases, rent payments, and maintenance requests
+
+table property
+id (PK)
+address
+city
+state
+zip
+county
+property type ('single-family', 'multi-family')
+year built
+current value
+bedrooms
+bathrooms
+area
+is_occupied (default false -- true, false)
+created_at TIMESTAMP DEFAULT NOW()
+
+
+table tenant
+id (PK)
+first name
+last name
+DoB
+driver license
+phone
+email (opt)
+created_at TIMESTAMP DEFAULT NOW()
+
+
+table lease
+id (PK)
+property id (FK)
+start date
+end date
+monthly rent
+monthly payment due date
+refundable deposit
+non-refundable deposit
+cars
+pets
+status (default active --active, expired, terminated)
+created_at TIMESTAMP DEFAULT NOW()
+
+
+table lease_tenant
+tenant id (PK)
+lease id (PK)
+
+
+(new pending payments are created at the beginning of the month)
+table payment
+id (PK)
+lease id (FK)
+monthly payment due date
+amount
+status (default pending, --pending, paid, late)
+created_at TIMESTAMP DEFAULT NOW()
+
+
+table maintenance_request
+id (PK)
+tenant id (FK)
+property id (FK)
+description
+status (default open -- open, in_progress, resolved)
+submission time TIMESTAMP DEFAULT NOW()
+resolution time
+material cost
+labor cost
+paid by (owner or renter)
+
+
+
+table emergency_contact
+id (PK)
+first name
+last name
+tenant id (FK)
+address
+phone
+email (opt)
+
+table dependence
+id (PK)
+first name
+last name
+DoB
+relationship
+lease id (FK)
+
+table image
+id (PK)
+link
+property id (FK)
+
+
+
+
+
+
+
+
+
+
+
+
