@@ -16,4 +16,13 @@ def create_app():
     login_manager.init_app(app)
     login_manager.login_view='auth.login'
 
+    from app import models
+
+    @login_manager.user_loader
+    def load_user(user_id):
+        return db.session.get(models.StaffUser, int(user_id))
+    
+    from app.auth.routes import auth_bp
+    app.register_blueprint(auth.bp)
+    
     return app
