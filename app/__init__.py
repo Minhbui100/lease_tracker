@@ -23,6 +23,6 @@ def create_app():
         return db.session.get(models.StaffUser, int(user_id))
     
     from app.auth.routes import auth_bp
-    app.register_blueprint(auth.bp)
+    app.register_blueprint(auth_bp)
     
     return app
