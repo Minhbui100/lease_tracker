@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+    <head><title>Tenants</title></head>
+    <body>
+        <h2>Tenants</h2>
+        <a href="{{ url_for('tenants.new_tenant') }}">Add Tenant</a>
+
+        {% with message = get_flashed_messages() %}
+            {%if messages%}
+                <ul>{% for m in messages%}<li>{{m}}</li>{%endfor%}</ul>
+            {%endif%}
+        {%endwith%}
+
+        <table border="1" cellpadding="6">
+            <tr>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Email</th>
+                <th>Action</th>
+            </tr>
+            {%for tenant in tenants%}
+            <tr>
+                <td>{{tenant.first_name}} {{tenant.last_name}}</td>
+                <td>{{tenant.phone or '-'}}</td>
+                <td>{{tenant.email or '-'}}</td>
+                <td>
+                    <a href="{{url_for('tenants.edit_tenant', tenant_id=tenant.id)}}">Edit</a>
+                    <form method="POST" action="{{url_for('tenants.delete_tenant', tenant_id=tenant.id)}}">
+                        <button type="submit" onclick="return confirm('Delete this tenant?');">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {%endfor%}
+        </table>
+    </body>
+</html>

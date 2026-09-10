@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+    <head><title>{{'Edit' if tenant else 'Add'}} Tenant</title></head>
+    <body>
+        <h2>{{'Edit' if tenant else 'Add'}} Tenant</h2>
+        <form method="POST">
+            <label>First Name: <input type="text" name="first_name" value="{{tenant.first_name if tenant else ''}}" required></label><br>
+            <label>Last Name: <input type="text" name="last_name" value="{{tenant.last_name if tenant else ''}}" required></label><br>
+            <label>Date of Birth: <input type="date" name="dob" value="{{tenant.dob if tenant else ''}}"></label><br>
+            <label>Driver license: <input type="text" name="driver_license" value="{{tenant.driver_license if tenant else ''}}"></label><br>
+            <label>Phone: <input type="text" name="phone" value="{{tenant.phone if tenant else ''}}"></label><br>
+            <label>Email<input type="email" name="email" value="{{tenant.email if tenant else ''}}"></label><br>
+            <button type="submit">Save</button>
+        </form>
+        <a href="{{url_for('tenants.list_tenants')}}">Back to the list</a>
+    </body>
+</html>
