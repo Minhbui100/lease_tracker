@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+    <head><title>Properties</title></head>
+    <body>
+        <h2>Properties</h2>
+        <a href="{{url_for('properties.add_property')}}">Add property</a>
+
+        {% with messages=get_flashed_messages()%}
+            {%if messages%}
+                <ul>{%for m in messages%}<li>{{m}}</li>{%endfor%}</ul>
+            {%endif%}
+        {%endwith%}
+
+        <table border="1" cellpadding="6">
+            <tr>
+                <th>Address</th>
+                <th>County</th>
+                <th>Type</th>
+                <th>Year Built</th>
+                <th>Current Value</th>
+                <th>Area</th>
+                <th>Bed/Bath</th>
+                <th>Occupied</th>
+                <th>Action</th>
+            </tr>
+            {%for p in properties%}
+            <tr>
+                <td>{{p.address}}, {{p.city}}, {{p.state}}, {{p.zip}}</td>
+                <td>{{p.county}}</td>
+                <td>{{p.property_type}}</td>
+                <td>{{p.year_built or '-'}}</td>
+                <td>{{p.current_value or '-'}}</td>
+                <td>{{p.area or '-'}}</td>
+                <td>{{p.bedrooms or '-'}} / {{p.bathrooms or '-'}}</td>
+                <td>{{'Yes' if p.is_occupied else 'No'}}</td>
+                <td>
+                    <a href="{{url_for('properties.edit_property', property_id=p.id)}}">Edit</a>
+                    <form method="POST" action="{{url_for('properties.delete_property', property_id=p.id)}}" style="display:inline">
+                        <button type="submit" onclick="return confirm('Delete this property?');">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {%endfor%}
+        </table>
+    </body>
+</html>
+

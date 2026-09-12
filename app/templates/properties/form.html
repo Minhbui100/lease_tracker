@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+    <head><title>{{'Edit' if property else 'Add'}} Property</title></head>
+    <body>
+        <h2>{{'Edit' if property else 'Add'}} Property</h2>
+        <form method="POST">
+            <label>Address: <input type="text" name="address" value="{{property.address if property else ''}}" required></label><br>
+            <label>City: <input type="text" name="city" value="{{property.city if property else ''}}" required></label><br> 
+            <label>State: <input type="text" name="state" value="{{property.state if property else ''}}" required></label><br>
+            <label>Zipcode: <input type="text" name="zip" value="{{property.zip if property else ''}}" required></label><br>
+            <label>County: <input type="text" name="county" value="{{property.county if property else ''}}" required></label><br>
+            <label>Property Type: 
+                <select name="property_type" required>
+                    <option value="single-family" {%if property and property.property_type=='single-family'%}selected{%endif%}>Single-family</option>
+                    <option value="multi-family" {%if property and property.property_type=='multi-family'%}selected{%endif%}>Multi-family</option>
+                </select>
+            </label><br>
+            <label>Year Built: <input type="number" name="year_built" value="{{ property.year_built if property else '' }}"></label><br>
+            <label>Current Value: <input type="number" step="0.01" name="current_value" value="{{ property.current_value if property else '' }}"></label><br>
+            <label>Bedrooms: <input type="number" name="bedrooms" value="{{ property.bedrooms if property else '' }}"></label><br>
+            <label>Bathrooms: <input type="number" step="0.5" name="bathrooms" value="{{ property.bathrooms if property else '' }}"></label><br>
+            <label>Area (sqft): <input type="number" step="0.01" name="area" value="{{ property.area if property else '' }}"></label><br>
+            <button type="submit">Save</button>
+        </form>
+        <a href="{{url_for('properties.list_properties')}}">Back to list</a>
+
+    </body>
+</html>

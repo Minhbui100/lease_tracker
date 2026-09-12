@@ -27,6 +27,9 @@ def create_app():
 
     from app.tenants.routes import tenants_bp
     app.register_blueprint(tenants_bp)
-    
+
+    from app.properties.routes import properties_bp
+    app.register_blueprint(properties_bp)
+
     return app
 

@@ -14,7 +14,7 @@ def login():
 
         if user and user.check_password(password):
             login_user(user)
-            return redirect(url_for('tenants.list_tenants'))
+            return redirect(url_for('properties.list_properties'))
         else:
             flash('Invalid username or password')
             return redirect(url_for('auth.login'))
