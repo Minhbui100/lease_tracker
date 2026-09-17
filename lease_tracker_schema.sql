@@ -65,6 +65,17 @@ create table payment (
     created_at      timestamp       DEFAULT NOW()
 );
 
+create table payment (
+    id              serial          primary key,
+    lease_id        integer         not null        references lease(id) on delete cascade,
+    due_date        date            not null,
+    amount          numeric (10,2)  not null,
+    memo            varchar (50),
+    pay_type        varchar (20)    check(pay_type in ('check', 'cash', 'zelle', 'bank transfer')),
+    status          varchar (20)    default 'pending' check(status in ('pending', 'paid', 'late')),
+    created_at      timestamp       DEFAULT NOW()
+);
+
 
 create table maintenance_request(
     id              serial          primary key,

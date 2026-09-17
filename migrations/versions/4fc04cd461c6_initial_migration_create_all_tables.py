@@ -1,8 +1,8 @@
 """Initial migration - create all tables
 
-Revision ID: ea31bee9cc13
+Revision ID: 4fc04cd461c6
 Revises: 
-Create Date: 2026-09-02 15:34:13.315218
+Create Date: 2026-09-17 17:22:35.450886
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'ea31bee9cc13'
+revision = '4fc04cd461c6'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -34,6 +34,15 @@ def upgrade():
     sa.Column('is_occupied', sa.Boolean(), nullable=True),
     sa.Column('created_at', sa.Date(), nullable=True),
     sa.PrimaryKeyConstraint('id')
+    )
+    op.create_table('staff_user',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('username', sa.String(length=200), nullable=False),
+    sa.Column('password_hash', sa.String(length=300), nullable=False),
+    sa.Column('role', sa.String(length=50), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('username')
     )
     op.create_table('tenant',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -116,8 +125,10 @@ def upgrade():
     op.create_table('payment',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('lease_id', sa.Integer(), nullable=False),
-    sa.Column('rent_due_date', sa.Date(), nullable=False),
+    sa.Column('due_date', sa.Date(), nullable=False),
     sa.Column('amount', sa.Numeric(precision=10, scale=2), nullable=False),
+    sa.Column('memo', sa.String(length=50), nullable=True),
+    sa.Column('pay_type', sa.String(length=20), nullable=True),
     sa.Column('status', sa.String(length=20), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['lease_id'], ['lease.id'], ),
@@ -136,5 +147,6 @@ def downgrade():
     op.drop_table('image')
     op.drop_table('emergency_contact')
     op.drop_table('tenant')
+    op.drop_table('staff_user')
     op.drop_table('property')
     # ### end Alembic commands ###

@@ -21,11 +21,11 @@ VALUES
 (2, 1),  
 (3, 2); 
 
-INSERT INTO payment (lease_id, rent_due_date, amount, status)
+INSERT INTO payment (lease_id, due_date, amount, status, memo, pay_type)
 VALUES
-(1, '2026-08-01', 1800.00, 'paid'),
-(1, '2026-09-01', 1800.00, 'pending'),
-(2, '2026-08-15', 1200.00, 'late');
+(1, '2026-08-01', 1800.00, 'paid', 'rent', 'zelle'),
+(1, '2026-12-01', 1800.00, 'pending', 'rent', 'zelle'),
+(2, '2026-08-15', 1200.00, 'late', 'rent', 'zelle');
 
 INSERT INTO maintenance_request (tenant_id, property_id, description, status, submission_time, material_cost, labor_cost, paid_by)
 VALUES

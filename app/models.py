@@ -72,8 +72,10 @@ class Payment(db.Model):
     __tablename__='payment'
     id=db.Column(db.Integer, primary_key=True)
     lease_id=db.Column(db.Integer, db.ForeignKey('lease.id'), nullable=False)
-    rent_due_date=db.Column(db.Date, nullable=False)
+    due_date=db.Column(db.Date, nullable=False)
     amount=db.Column(db.Numeric(10,2), nullable=False)
+    memo=db.Column(db.String(50))
+    pay_type=db.Column(db.String(20))
     status=db.Column(db.String(20), default='pending')
     created_at=db.Column(db.DateTime, default=datetime.utcnow)
 
