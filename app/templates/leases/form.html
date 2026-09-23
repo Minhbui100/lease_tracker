@@ -29,7 +29,7 @@
             <label>Start Date: <input type="date" name="start_date" value="{{lease.start_date if lease else ''}}" required></label><br>
             <label>End Date: <input type="date" name="end_date" value="{{lease.end_date if lease else ''}}" required></label><br>
             <label>Rent: <input type="number" step="0.01" name="monthly_rent" value="{{lease.monthly_rent if lease else ''}}" required></label><br>
-            <label>Rent Due Date (1-28): <input type="number" min="1" max="28" name="rent_due_date" value="{{lease.rent_due_date if lease else ''}}" required></label><br>
+            <label>Rent Due Date (1-31): <input type="number" min="1" max="31" name="rent_due_date" value="{{lease.rent_due_date if lease else ''}}" required></label><br>
             <label>Refundable Deposit: <input type="number" step="0.01" name="refundable_deposit" value="{{lease.refundable_deposit if lease else 0}}"></label><br>
             <label>Non-refundable Deposit: <input type="number" step="0.01" name="nonrefundable_deposit" value="{{lease.nonrefundable_deposit if lease else 0}}"></label><br>
             <label>Cars: <input type="number" name="cars" value="{{lease.cars if lease else 0}}"></label><br>

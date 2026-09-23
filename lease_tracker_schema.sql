@@ -59,11 +59,14 @@ create table lease_tenant (
 create table payment (
     id              serial          primary key,
     lease_id        integer         not null        references lease(id) on delete cascade,
-    rent_due_date   date            not null,
+    due_date        date            not null,
     amount          numeric (10,2)  not null,
+    memo            varchar(50),
+    pay_style       varchar(20),
     status          varchar (20)    default 'pending' check(status in ('pending', 'paid', 'late')),
     created_at      timestamp       DEFAULT NOW()
 );
+
 
 create table payment (
     id              serial          primary key,

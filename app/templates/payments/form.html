@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head><title>{{'Edit' if payment else 'Log'}} Payment</title></head>
+<body>
+    <h2>{{'Edit' if payment else 'Log'}} Payment</h2>
+    <form method="POST">
+        <label>Lease:
+            <select name="lease_id" required>
+                {% for lease in leases %}
+                <option value="{{lease.id}}" {% if payment and payment.lease_id==lease.id %}selected{% endif %}>
+                    {{lease.property.address}} — ${{lease.monthly_rent}}/mo
+                </option>
+                {% endfor %}
+            </select>
+        </label><br>
+        <label>Due Date: <input type="date" name="due_date" value="{{payment.due_date if payment else ''}}" required></label><br>
+        <label>Amount: <input type="number" step="0.01" name="amount" value="{{payment.amount if payment else ''}}" required></label><br>
+        <label>Pay Type:
+            <select name="pay_type">
+                <option value="">-- none --</option>
+                <option value="check" {% if payment and payment.pay_type=='check' %}selected{% endif %}>Check</option>
+                <option value="cash" {% if payment and payment.pay_type=='cash' %}selected{% endif %}>Cash</option>
+                <option value="zelle" {% if payment and payment.pay_type=='zelle' %}selected{% endif %}>Zelle</option>
+                <option value="bank transfer" {% if payment and payment.pay_type=='bank transfer' %}selected{% endif %}>Bank Transfer</option>
+            </select>
+        </label><br>
+        <label>Memo: <input type="text" name="memo" value="{{payment.memo if payment else ''}}"></label><br>
+        <label>Status:
+            <select name="status">
+                <option value="pending" {% if payment and payment.status=='pending' %}selected{% endif %}>Pending</option>
+                <option value="paid" {% if payment and payment.status=='paid' %}selected{% endif %}>Paid</option>
+                <option value="late" {% if payment and payment.status=='late' %}selected{% endif %}>Late</option>
+            </select>
+        </label><br>
+        <button type="submit">Save</button>
+    </form>
+    <a href="{{url_for('payments.list_payments')}}">Back to list</a>
+</body>
+</html>

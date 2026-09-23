@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head><title>Payments</title></head>
+<body>
+    <h2>Payments</h2>
+    <a href="{{url_for('payments.add_payment')}}">Log Payment</a>
+
+    {% with messages=get_flashed_messages() %}
+        {% if messages %}
+            <ul>{% for m in messages %}<li>{{m}}</li>{% endfor %}</ul>
+        {% endif %}
+    {% endwith %}
+
+    <table border="1" cellpadding="6">
+        <tr>
+            <th>Lease (Property)</th>
+            <th>Due Date</th>
+            <th>Amount</th>
+            <th>Pay Type</th>
+            <th>Memo</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+        {% for p in payments %}
+        <tr>
+            <td>{{p.lease.property.address}}</td>
+            <td>{{p.due_date}}</td>
+            <td>${{p.amount}}</td>
+            <td>{{p.pay_type or '-'}}</td>
+            <td>{{p.memo}}</td>
+            <td>{{p.status}}</td>
+            <td>
+                <a href="{{url_for('payments.edit_payment', payment_id=p.id)}}">Edit</a>
+                <form method="POST" action="{{url_for('payments.delete_payment', payment_id=p.id)}}" style="display:inline">
+                    <button type="submit" onclick="return confirm('Delete this payment?');">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+
+</body>
+</html>
