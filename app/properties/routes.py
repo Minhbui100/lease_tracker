@@ -15,6 +15,27 @@ def list_properties():
 @login_required
 def add_property():
     if request.method=='POST':
+        address=request.form['address']
+        city=request.form['city']
+        existing=Property.query.filter_by(address=address, city=city).first()
+        if existing:
+            flash('This property exists in the system')
+            unsaved = Property(
+                address=address,
+                city=city,
+                state=request.form['state'],
+                zip=request.form['zip'],
+                county=request.form['county'],
+                property_type=request.form['property_type'],
+                year_built=request.form['year_built'] or None,
+                current_value=request.form['current_value'] or None,
+                bedrooms=request.form['bedrooms'] or None,
+                bathrooms=request.form['bathrooms'] or None,
+                area=request.form['area'] or None,
+            )
+            return render_template('properties/form.html', property=unsaved)
+
+        
         property=Property(
             address=request.form['address'],
             city=request.form['city'],
@@ -29,7 +50,7 @@ def add_property():
             area=request.form['area'] or None,
             is_occupied=False,
         )
-    
+        
         db.session.add(property)
         db.session.commit()
         flash('Property added successfully')

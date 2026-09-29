@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head><title>Maintenance Requests</title></head>
+<body>
+    <h2>Maintenance Requests</h2>
+    <a href="{{url_for('maintenance.add_request')}}">New Request</a>
+
+    {% with messages=get_flashed_messages() %}
+        {% if messages %}
+            <ul>{% for m in messages %}<li>{{m}}</li>{% endfor %}</ul>
+        {% endif %}
+    {% endwith %}
+
+    <table border="1" cellpadding="6">
+        <tr>
+            <th>Property</th>
+            <th>Reported By</th>
+            <th>Description</th>
+            <th>Status</th>
+            <th>Submitted</th>
+            <th>Resolved</th>
+            <th>Material Cost</th>
+            <th>Labor Cost</th>
+            <th>Action</th>
+        </tr>
+        {% for r in requests %}
+        <tr>
+            <td>{{r.property.address}}</td>
+            <td>{{r.reported_by}}</td>
+            <td>{{r.description}}</td>
+            <td>{{r.status}}</td>
+            <td>{{r.submission_time.strftime('%Y-%m-%d') if r.submission_time else '-'}}</td>
+            <td>{{r.resolution_time.strftime('%Y-%m-%d') if r.resolution_time else '-'}}</td>
+            <td>{{r.material_cost  or '-'}}</td>
+            <td>{{r.labor_cost  or '-'}}</td>
+            <td>
+                <a href="{{url_for('maintenance.edit_request', request_id=r.id)}}">Edit</a>
+                <form method="POST" action="{{url_for('maintenance.delete_request', request_id=r.id)}}" style="display:inline">
+                    <button type="submit" onclick="return confirm('Delete this maintenance request?');">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head><title>{{'Edit' if maintenance_request else 'New'}} Maintenance Request</title></head>
+<body>
+    <h2>{{'Edit' if maintenance_request else 'New'}} Maintenance Request</h2>
+    <form method="POST">
+        <label>Property:
+            <select name="property_id" required>
+                {% for p in properties %}
+                <option value="{{p.id}}" {% if maintenance_request and maintenance_request.property_id==p.id %}selected{% endif %}>
+                    {{p.address}}, {{p.city}}
+                </option>
+                {% endfor %}
+            </select>
+        </label><br>
+        <label>Reported By:
+            <select name="reported_by">
+                <option value="tenant" {% if maintenance_request and maintenance_request.reported_by=='tenant' %}selected{% endif %}>Tenant</option>
+                <option value="staff" {% if not maintenance_request or maintenance_request.reported_by=='staff' %}selected{% endif %}>Staff</option>
+            </select>
+        </label><br>
+        <label>Description:<br>
+            <textarea name="description" rows="4" cols="50" required>{{maintenance_request.description if maintenance_request else ''}}</textarea>
+        </label><br>
+
+        {% if maintenance_request %}
+        <label>Status:
+            <select name="status">
+                <option value="open" {% if maintenance_request.status=='open' %}selected{% endif %}>Open</option>
+                <option value="in_progress" {% if maintenance_request.status=='in_progress' %}selected{% endif %}>In Progress</option>
+                <option value="resolved" {% if maintenance_request.status=='resolved' %}selected{% endif %}>Resolved</option>
+            </select>
+        </label><br>
+        <label>Material Cost: <input type="number" step="0.01" name="material_cost" value="{{maintenance_request.material_cost or ''}}"></label><br>
+        <label>Labor Cost: <input type="number" step="0.01" name="labor_cost" value="{{maintenance_request.labor_cost or ''}}"></label><br>
+        <label>Paid By:
+            <select name="paid_by">
+                <option value="owner" {% if maintenance_request.paid_by=='owner' %}selected{% endif %}>Owner</option>
+                <option value="renter" {% if maintenance_request.paid_by=='renter' %}selected{% endif %}>Renter</option>
+            </select>
+        </label><br>
+        {% endif %}
+
+        <button type="submit">Save</button>
+    </form>
+    <a href="{{url_for('maintenance.list_requests')}}">Back to list</a>
+</body>
+</html>

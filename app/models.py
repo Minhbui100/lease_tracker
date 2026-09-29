@@ -38,7 +38,6 @@ class Tenant(db.Model):
     email=db.Column(db.String(200))
     created_at=db.Column(db.Date, default=datetime.utcnow)
 
-    maintenance_requests=db.relationship('MaintenanceRequest', backref='tenant', lazy=True)
     emergency_contacts=db.relationship('EmergencyContact', backref='tenant', lazy=True)
     leases=db.relationship('Lease', secondary='lease_tenant', backref='tenants', lazy=True)
 
@@ -83,7 +82,7 @@ class Payment(db.Model):
 class MaintenanceRequest(db.Model):
     __tablename__='maintenance_request'
     id=db.Column(db.Integer, primary_key=True)
-    tenant_id=db.Column(db.Integer, db.ForeignKey('tenant.id'))
+    reported_by = db.Column(db.String(20), default='staff')
     property_id=db.Column(db.Integer, db.ForeignKey('property.id'), nullable=False)
     description=db.Column(db.Text, nullable=False)
     status=db.Column(db.String(20), default='open')
@@ -134,7 +133,7 @@ class StaffUser(db.Model, UserMixin):
     created_at=db.Column(db.DateTime, default=datetime.utcnow)
 
     def set_password(self, password):
-        self.password_hash=generate_password_hash(password)
+        self.password_hash=generate_password_hash(password, method='pbkdf2:sha256')
         
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
