@@ -107,6 +107,9 @@ def create_app():
     from app.maintenance.routes import maintenance_bp
     app.register_blueprint(maintenance_bp)  
 
+    from app.dashboard.routes import dashboard_bp
+    app.register_blueprint(dashboard_bp)
+
     scheduler=BackgroundScheduler()
     with app.app_context():
         scheduler.add_job(func=expire_old_leases, trigger='cron', hour=0, minute=0)
