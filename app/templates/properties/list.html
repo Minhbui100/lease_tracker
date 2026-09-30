@@ -25,7 +25,7 @@
             </tr>
             {%for p in properties%}
             <tr>
-                <td>{{p.address}}, {{p.city}}, {{p.state}}, {{p.zip}}</td>
+                <td><a href="{{url_for('properties.view_property', property_id=p.id)}}">{{p.address}}, {{p.city}}, {{p.state}}, {{p.zip}}</a></td>
                 <td>{{p.county}}</td>
                 <td>{{p.property_type}}</td>
                 <td>{{p.year_built or '-'}}</td>
