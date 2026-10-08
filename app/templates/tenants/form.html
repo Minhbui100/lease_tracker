@@ -1,17 +1,22 @@
-<!DOCTYPE html>
-<html>
-    <head><title>{{'Edit' if tenant else 'Add'}} Tenant</title></head>
-    <body>
-        <h2>{{'Edit' if tenant else 'Add'}} Tenant</h2>
-        <form method="POST">
-            <label>First Name: <input type="text" name="first_name" value="{{tenant.first_name if tenant else ''}}" required></label><br>
-            <label>Last Name: <input type="text" name="last_name" value="{{tenant.last_name if tenant else ''}}" required></label><br>
-            <label>Date of Birth: <input type="date" name="dob" value="{{tenant.dob if tenant else ''}}"></label><br>
-            <label>Driver license: <input type="text" name="driver_license" value="{{tenant.driver_license if tenant else ''}}"></label><br>
-            <label>Phone: <input type="text" name="phone" value="{{tenant.phone if tenant else ''}}"></label><br>
-            <label>Email<input type="email" name="email" value="{{tenant.email if tenant else ''}}"></label><br>
-            <button type="submit">Save</button>
-        </form>
-        <a href="{{url_for('tenants.list_tenants')}}">Back to the list</a>
-    </body>
-</html>
+{% extends 'base.html' %}
+{% from '_form_helpers.html' import breadcrumbs, error_summary, field_error, error_class, form_actions %}
+{% block title %}{{ 'Edit' if tenant else 'Add' }} Tenant{% endblock %}
+{% block breadcrumbs %}
+    {% if tenant %}{{ breadcrumbs([('Tenants', url_for('tenants.list_tenants')), (tenant.first_name ~ ' ' ~ tenant.last_name, None), ('Edit', None)]) }}
+    {% else %}{{ breadcrumbs([('Tenants', url_for('tenants.list_tenants')), ('Add', None)]) }}{% endif %}
+{% endblock %}
+{% block content %}
+<div class="card form-card">
+    {{ error_summary(errors) }}
+    {% set t = tenant %}
+    <form method="POST">
+        <label class="{{ error_class(errors, 'first_name') }}">First Name: <input type="text" name="first_name" maxlength="100" value="{{ form_value('first_name', t.first_name if t else '') }}" required></label>{{ field_error(errors, 'first_name') }}
+        <label class="{{ error_class(errors, 'last_name') }}">Last Name: <input type="text" name="last_name" maxlength="100" value="{{ form_value('last_name', t.last_name if t else '') }}" required></label>{{ field_error(errors, 'last_name') }}
+        <label class="{{ error_class(errors, 'dob') }}">Date of Birth: <input type="date" name="dob" min="1900-01-01" value="{{ form_value('dob', t.dob if t else '') }}"></label>{{ field_error(errors, 'dob') }}
+        <label class="{{ error_class(errors, 'driver_license') }}">Driver license: <input type="text" name="driver_license" maxlength="30" value="{{ form_value('driver_license', t.driver_license if t else '') }}"></label>{{ field_error(errors, 'driver_license') }}
+        <label class="{{ error_class(errors, 'phone') }}">Phone: <input type="tel" name="phone" maxlength="20" placeholder="(555) 123-4567" value="{{ form_value('phone', t.phone if t else '') }}"></label>{{ field_error(errors, 'phone') }}
+        <label class="{{ error_class(errors, 'email') }}">Email: <input type="email" name="email" maxlength="200" value="{{ form_value('email', t.email if t else '') }}"></label>{{ field_error(errors, 'email') }}
+        {{ form_actions(url_for('tenants.list_tenants'), 'Save changes' if tenant else 'Add tenant') }}
+    </form>
+</div>
+{% endblock %}

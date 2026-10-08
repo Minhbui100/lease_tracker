@@ -1,47 +1,48 @@
-<!DOCTYPE html>
-<html>
-    <head><title>Properties</title></head>
-    <body>
-        <h2>Properties</h2>
-        <a href="{{url_for('properties.add_property')}}">Add property</a>
-
-        {% with messages=get_flashed_messages()%}
-            {%if messages%}
-                <ul>{%for m in messages%}<li>{{m}}</li>{%endfor%}</ul>
-            {%endif%}
-        {%endwith%}
-
-        <table border="1" cellpadding="6">
-            <tr>
-                <th>Address</th>
-                <th>County</th>
-                <th>Type</th>
-                <th>Year Built</th>
-                <th>Current Value</th>
-                <th>Area</th>
-                <th>Bed/Bath</th>
-                <th>Occupied</th>
-                <th>Action</th>
-            </tr>
-            {%for p in properties%}
-            <tr>
-                <td><a href="{{url_for('properties.view_property', property_id=p.id)}}">{{p.address}}, {{p.city}}, {{p.state}}, {{p.zip}}</a></td>
-                <td>{{p.county}}</td>
-                <td>{{p.property_type}}</td>
-                <td>{{p.year_built or '-'}}</td>
-                <td>{{p.current_value or '-'}}</td>
-                <td>{{p.area or '-'}}</td>
-                <td>{{p.bedrooms or '-'}} / {{p.bathrooms or '-'}}</td>
-                <td>{{'Yes' if p.is_occupied else 'No'}}</td>
-                <td>
-                    <a href="{{url_for('properties.edit_property', property_id=p.id)}}">Edit</a>
-                    <form method="POST" action="{{url_for('properties.delete_property', property_id=p.id)}}" style="display:inline">
-                        <button type="submit" onclick="return confirm('Delete this property?');">Delete</button>
-                    </form>
-                </td>
-            </tr>
-            {%endfor%}
-        </table>
-    </body>
-</html>
-
+{% extends 'base.html' %}
+{% from '_form_helpers.html' import breadcrumbs, delete_button %}
+{% block title %}Properties{% endblock %}
+{% block breadcrumbs %}{{ breadcrumbs([('Properties', None)]) }}{% endblock %}
+{% block actions %}<a class="btn btn-primary" href="{{url_for('properties.add_property')}}">+ Add property</a>{% endblock %}
+{% block content %}
+<div class="table-wrap">
+    {% if properties %}
+    <table class="data">
+        <tr>
+            <th>Address</th>
+            <th>County</th>
+            <th>Type</th>
+            <th>Year Built</th>
+            <th>Current Value</th>
+            <th>Area</th>
+            <th>Bed/Bath</th>
+            <th>Occupied</th>
+            <th>Actions</th>
+        </tr>
+        {%for p in properties%}
+        <tr>
+            <td><a href="{{url_for('properties.view_property', property_id=p.id)}}">{{p.address}}, {{p.city}}, {{p.state}}, {{p.zip}}</a></td>
+            <td>{{p.county}}</td>
+            <td>{{p.property_type}}</td>
+            <td>{{p.year_built or '-'}}</td>
+            <td>{{p.current_value or '-'}}</td>
+            <td>{{p.area or '-'}}</td>
+            <td>{{p.bedrooms or '-'}} / {{p.bathrooms or '-'}}</td>
+            <td>{{'Yes' if p.is_occupied else 'No'}}</td>
+            <td>
+                <div class="row-actions">
+                    <a class="btn btn-secondary btn-sm" href="{{url_for('properties.view_property', property_id=p.id)}}">View</a>
+                    <a class="btn btn-secondary btn-sm" href="{{url_for('properties.edit_property', property_id=p.id)}}">Edit</a>
+                    {{ delete_button(url_for('properties.delete_property', property_id=p.id), 'Delete ' ~ p.address ~ '?') }}
+                </div>
+            </td>
+        </tr>
+        {%endfor%}
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <p>No properties yet. Add your first property to start tracking leases.</p>
+        <a class="btn btn-primary" href="{{url_for('properties.add_property')}}">+ Add property</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

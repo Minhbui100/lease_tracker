@@ -1,56 +1,66 @@
-<!DOCTYPE html>
-<html>
-    <head><title>{{"Edit" if lease else "Add"}} Lease</title></head>
-    <body>
-        <h2>{{"Edit" if lease else "Add"}} Lease</h2>
+{% extends 'base.html' %}
+{% from '_form_helpers.html' import breadcrumbs, error_summary, field_error, error_class, form_actions %}
+{% block title %}{{ 'Edit' if lease else 'Add' }} Lease{% endblock %}
+{% block breadcrumbs %}
+    {% if lease %}{{ breadcrumbs([('Leases', url_for('leases.list_leases')), ('Lease #' ~ lease.id, None), ('Edit', None)]) }}
+    {% else %}{{ breadcrumbs([('Leases', url_for('leases.list_leases')), ('Add', None)]) }}{% endif %}
+{% endblock %}
+{% block content %}
+<div class="card form-card">
+    {{ error_summary(errors) }}
 
-        <form method="POST">
-            <label>Property:
-                <select name="property_id" required {%if lease%}disabled{%endif%}>
-                    {%for p in properties%}
-                        <option value="{{p.id}}" {%if lease and lease.property_id==p.id%}selected{%endif%}>
-                            {{p.address}} {{p.city}}
-                        </option>
-                    {%endfor%}
-                </select>
-                {%if lease%}
-                <input type="hidden" name="property_id" value="{{lease.property_id}}">
-                {%endif%}
-            </label><br>
-            <label>Tenants (Select one or more):<br>
-                <select name="tenant_ids" multiple size="5">
-                    {%for tenant in tenants%}
-                        <option value="{{tenant.id}}" {%if lease and tenant in lease.tenants%}selected{%endif%}>
-                            {{tenant.first_name}} {{tenant.last_name}}
-                        </option>
-                    {%endfor%}
-                </select>
-            </label><br>
-            <label>Start Date: <input type="date" name="start_date" value="{{lease.start_date if lease else ''}}" required></label><br>
-            <label>End Date: <input type="date" name="end_date" value="{{lease.end_date if lease else ''}}" required></label><br>
-            <label>Rent: <input type="number" step="0.01" name="monthly_rent" value="{{lease.monthly_rent if lease else ''}}" required></label><br>
-            <label>Rent Due Date (1-31): <input type="number" min="1" max="31" name="rent_due_date" value="{{lease.rent_due_date if lease else ''}}" required></label><br>
-            <label>Refundable Deposit: <input type="number" step="0.01" name="refundable_deposit" value="{{lease.refundable_deposit if lease else 0}}"></label><br>
-            <label>Non-refundable Deposit: <input type="number" step="0.01" name="nonrefundable_deposit" value="{{lease.nonrefundable_deposit if lease else 0}}"></label><br>
-            <label>Cars: <input type="number" name="cars" value="{{lease.cars if lease else 0}}"></label><br>
-            <label>Pets: <input type="number" name="pets" value="{{lease.pets if lease else 0}}"></label><br>
-            
+    {% if not properties %}
+        <p class="notice">There are no available properties. <a href="{{url_for('properties.add_property')}}">Add a property</a> or end an existing lease first.</p>
+    {% endif %}
+    {% if not tenants %}
+        <p class="notice">There are no tenants yet. <a href="{{url_for('tenants.new_tenant')}}">Add a tenant</a> before creating a lease.</p>
+    {% endif %}
+
+    <form method="POST">
+        {% set property_id = form_value('property_id', lease.property_id if lease else '')|string %}
+        <label class="{{ error_class(errors, 'property_id') }}">Property:
+            <select name="property_id" required {%if lease%}disabled{%endif%}>
+                <option value="">-- Select a property --</option>
+                {%for p in properties%}
+                    <option value="{{p.id}}" {%if property_id==p.id|string%}selected{%endif%}>
+                        {{p.address}} {{p.city}}
+                    </option>
+                {%endfor%}
+            </select>
             {%if lease%}
-            <label>Status:
-                <select name="status">
-                    <option value="active" {%if lease.status=='active'%}selected{%endif%}>Active</option>
-                    <option value="expired" {%if lease.status=='expired'%}selected{%endif%}>Expired</option>
-                    <option value="terminated" {%if lease.status=='terminated'%}selected{%endif%}>Terminated</option>
-                </select>
-            </label><br>
+            <input type="hidden" name="property_id" value="{{lease.property_id}}">
             {%endif%}
-            <button type="submit">Save</button>
-        </form>
-        <a href="{{url_for('leases.list_leases')}}">Back to lease list</a>
-    </body>
-</html>
+        </label>{{ field_error(errors, 'property_id') }}
+        {% set selected_tenants = form_values('tenant_ids', lease.tenants|map(attribute='id') if lease else []) %}
+        <label class="{{ error_class(errors, 'tenant_ids') }}">Tenants (Select one or more):
+            <select name="tenant_ids" multiple size="5" required>
+                {%for tenant in tenants%}
+                    <option value="{{tenant.id}}" {%if tenant.id|string in selected_tenants%}selected{%endif%}>
+                        {{tenant.first_name}} {{tenant.last_name}}
+                    </option>
+                {%endfor%}
+            </select>
+        </label>{{ field_error(errors, 'tenant_ids') }}
+        <label class="{{ error_class(errors, 'start_date') }}">Start Date: <input type="date" name="start_date" value="{{ form_value('start_date', lease.start_date if lease else '') }}" required></label>{{ field_error(errors, 'start_date') }}
+        <label class="{{ error_class(errors, 'end_date') }}">End Date: <input type="date" name="end_date" value="{{ form_value('end_date', lease.end_date if lease else '') }}" required></label>{{ field_error(errors, 'end_date') }}
+        <label class="{{ error_class(errors, 'monthly_rent') }}">Rent: <input type="number" step="0.01" min="0.01" name="monthly_rent" value="{{ form_value('monthly_rent', lease.monthly_rent if lease else '') }}" required></label>{{ field_error(errors, 'monthly_rent') }}
+        <label class="{{ error_class(errors, 'rent_due_date') }}">Rent Due Date (1-31): <input type="number" min="1" max="31" name="rent_due_date" value="{{ form_value('rent_due_date', lease.rent_due_date if lease else '') }}" required></label>{{ field_error(errors, 'rent_due_date') }}
+        <label class="{{ error_class(errors, 'refundable_deposit') }}">Refundable Deposit: <input type="number" step="0.01" min="0" name="refundable_deposit" value="{{ form_value('refundable_deposit', lease.refundable_deposit if lease else 0) }}"></label>{{ field_error(errors, 'refundable_deposit') }}
+        <label class="{{ error_class(errors, 'nonrefundable_deposit') }}">Non-refundable Deposit: <input type="number" step="0.01" min="0" name="nonrefundable_deposit" value="{{ form_value('nonrefundable_deposit', lease.nonrefundable_deposit if lease else 0) }}"></label>{{ field_error(errors, 'nonrefundable_deposit') }}
+        <label class="{{ error_class(errors, 'cars') }}">Cars: <input type="number" min="0" max="20" name="cars" value="{{ form_value('cars', lease.cars if lease else 0) }}"></label>{{ field_error(errors, 'cars') }}
+        <label class="{{ error_class(errors, 'pets') }}">Pets: <input type="number" min="0" max="20" name="pets" value="{{ form_value('pets', lease.pets if lease else 0) }}"></label>{{ field_error(errors, 'pets') }}
 
-
-
-
-
+        {%if lease%}
+        {% set status = form_value('status', lease.status) %}
+        <label class="{{ error_class(errors, 'status') }}">Status:
+            <select name="status">
+                <option value="active" {%if status=='active'%}selected{%endif%}>Active</option>
+                <option value="expired" {%if status=='expired'%}selected{%endif%}>Expired</option>
+                <option value="terminated" {%if status=='terminated'%}selected{%endif%}>Terminated</option>
+            </select>
+        </label>{{ field_error(errors, 'status') }}
+        {%endif%}
+        {{ form_actions(url_for('leases.list_leases'), 'Save changes' if lease else 'Add lease') }}
+    </form>
+</div>
+{% endblock %}

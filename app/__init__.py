@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, flash, redirect, request, url_for
 from flask_sqlalchemy import SQLAlchemy 
 from flask_migrate   import Migrate 
 from flask_login import LoginManager
@@ -77,6 +77,16 @@ def generate_monthly_rent():
 def create_app():
     app=Flask(__name__)
     app.config.from_object('config.Config')
+    app.config.setdefault('MAX_CONTENT_LENGTH', 10*1024*1024)
+
+    from app.validation import form_value, form_values
+    app.jinja_env.globals.update(form_value=form_value, form_values=form_values)
+
+    @app.errorhandler(413)
+    def file_too_large(error):
+        limit_mb=app.config['MAX_CONTENT_LENGTH']//(1024*1024)
+        flash(f'That file is too large. Please upload a file smaller than {limit_mb} MB.')
+        return redirect(request.referrer or url_for('dashboard.index'))
 
     db.init_app(app)
     migrate.init_app(app, db)

@@ -1,23 +1,19 @@
-<!DOCTYPE html>
-<html>
-<head><title>Staff Login</title></head>
-<body>
-    <h2>Staff Login</h2>
+{% extends 'base.html' %}
+{% from '_form_helpers.html' import error_summary, field_error, error_class %}
+{% block title %}Staff Login{% endblock %}
+{% block auth_content %}
+<div class="card form-card">
+    <h1>Staff Login</h1>
     {% with messages = get_flashed_messages() %}
         {% if messages %}
-            <ul>
-            {% for message in messages %}
-                <li>{{ message }}</li>
-            {% endfor %}
-            </ul>
+            <ul class="flash" role="status">{% for m in messages %}<li>{{ m }}</li>{% endfor %}</ul>
         {% endif %}
     {% endwith %}
+    {{ error_summary(errors) }}
     <form method="POST">
-        <label>Username: <input type="text" name="username" required></label><br>
-        <label>Password: <input type="password" name="password" required></label><br>
-        <button type="submit">Log In</button>
+        <label class="{{ error_class(errors, 'username') }}">Username: <input type="text" name="username" maxlength="200" value="{{ form_value('username') }}" autocomplete="username" autofocus required></label>{{ field_error(errors, 'username') }}
+        <label class="{{ error_class(errors, 'password') }}">Password: <input type="password" name="password" autocomplete="current-password" required></label>{{ field_error(errors, 'password') }}
+        <div class="form-actions"><button type="submit" class="btn btn-primary">Log in</button></div>
     </form>
-</body>
-
-
-</html>
+</div>
+{% endblock %}

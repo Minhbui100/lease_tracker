@@ -1,39 +1,50 @@
-<!DOCTYPE html>
-<html>
-<head><title>{{'Edit' if payment else 'Log'}} Payment</title></head>
-<body>
-    <h2>{{'Edit' if payment else 'Log'}} Payment</h2>
+{% extends 'base.html' %}
+{% from '_form_helpers.html' import breadcrumbs, error_summary, field_error, error_class, form_actions %}
+{% block title %}{{ 'Edit' if payment else 'Log' }} Payment{% endblock %}
+{% block breadcrumbs %}
+    {% if payment %}{{ breadcrumbs([('Payments', url_for('payments.list_payments')), ('Payment #' ~ payment.id, None), ('Edit', None)]) }}
+    {% else %}{{ breadcrumbs([('Payments', url_for('payments.list_payments')), ('Log', None)]) }}{% endif %}
+{% endblock %}
+{% block content %}
+<div class="card form-card">
+    {{ error_summary(errors) }}
+    {% if not leases %}
+    <p class="notice">There are no active leases to log a payment against. <a href="{{url_for('leases.add_lease')}}">Add a lease</a> first.</p>
+    {% endif %}
     <form method="POST">
-        <label>Lease:
-            <select name="lease_id" required>
-                {% for lease in leases %}
-                <option value="{{lease.id}}" {% if payment and payment.lease_id==lease.id %}selected{% endif %}>
-                    {{lease.property.address}} — ${{lease.monthly_rent}}/mo
-                </option>
-                {% endfor %}
-            </select>
-        </label><br>
-        <label>Due Date: <input type="date" name="due_date" value="{{payment.due_date if payment else ''}}" required></label><br>
-        <label>Amount: <input type="number" step="0.01" name="amount" value="{{payment.amount if payment else ''}}" required></label><br>
-        <label>Pay Type:
-            <select name="pay_type">
-                <option value="">-- none --</option>
-                <option value="check" {% if payment and payment.pay_type=='check' %}selected{% endif %}>Check</option>
-                <option value="cash" {% if payment and payment.pay_type=='cash' %}selected{% endif %}>Cash</option>
-                <option value="zelle" {% if payment and payment.pay_type=='zelle' %}selected{% endif %}>Zelle</option>
-                <option value="bank transfer" {% if payment and payment.pay_type=='bank transfer' %}selected{% endif %}>Bank Transfer</option>
-            </select>
-        </label><br>
-        <label>Memo: <input type="text" name="memo" value="{{payment.memo if payment else ''}}"></label><br>
-        <label>Status:
-            <select name="status">
-                <option value="pending" {% if payment and payment.status=='pending' %}selected{% endif %}>Pending</option>
-                <option value="paid" {% if payment and payment.status=='paid' %}selected{% endif %}>Paid</option>
-                <option value="late" {% if payment and payment.status=='late' %}selected{% endif %}>Late</option>
-            </select>
-        </label><br>
-        <button type="submit">Save</button>
+    {% set lease_id = form_value('lease_id', payment.lease_id if payment else '')|string %}
+    <label class="{{ error_class(errors, 'lease_id') }}">Lease:
+        <select name="lease_id" required>
+            <option value="">-- Select a lease --</option>
+            {% for lease in leases %}
+            <option value="{{lease.id}}" {% if lease_id==lease.id|string %}selected{% endif %}>
+                {{lease.property.address}} — ${{lease.monthly_rent}}/mo
+            </option>
+            {% endfor %}
+        </select>
+    </label>{{ field_error(errors, 'lease_id') }}
+    <label class="{{ error_class(errors, 'due_date') }}">Due Date: <input type="date" name="due_date" value="{{ form_value('due_date', payment.due_date if payment else '') }}" required></label>{{ field_error(errors, 'due_date') }}
+    <label class="{{ error_class(errors, 'amount') }}">Amount: <input type="number" step="0.01" min="0.01" name="amount" value="{{ form_value('amount', payment.amount if payment else '') }}" required></label>{{ field_error(errors, 'amount') }}
+    {% set pay_type = form_value('pay_type', payment.pay_type if payment else '') %}
+    <label class="{{ error_class(errors, 'pay_type') }}">Pay Type:
+        <select name="pay_type">
+            <option value="">-- none --</option>
+            <option value="check" {% if pay_type=='check' %}selected{% endif %}>Check</option>
+            <option value="cash" {% if pay_type=='cash' %}selected{% endif %}>Cash</option>
+            <option value="zelle" {% if pay_type=='zelle' %}selected{% endif %}>Zelle</option>
+            <option value="bank transfer" {% if pay_type=='bank transfer' %}selected{% endif %}>Bank Transfer</option>
+        </select>
+    </label>{{ field_error(errors, 'pay_type') }}
+    <label class="{{ error_class(errors, 'memo') }}">Memo: <input type="text" name="memo" maxlength="50" value="{{ form_value('memo', payment.memo if payment else '') }}"></label>{{ field_error(errors, 'memo') }}
+    {% set status = form_value('status', payment.status if payment else 'pending') %}
+    <label class="{{ error_class(errors, 'status') }}">Status:
+        <select name="status">
+            <option value="pending" {% if status=='pending' %}selected{% endif %}>Pending</option>
+            <option value="paid" {% if status=='paid' %}selected{% endif %}>Paid</option>
+            <option value="late" {% if status=='late' %}selected{% endif %}>Late</option>
+        </select>
+    </label>{{ field_error(errors, 'status') }}
+        {{ form_actions(url_for('payments.list_payments'), 'Save changes' if payment else 'Log payment') }}
     </form>
-    <a href="{{url_for('payments.list_payments')}}">Back to list</a>
-</body>
-</html>
+</div>
+{% endblock %}

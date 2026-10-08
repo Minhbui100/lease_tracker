@@ -1,0 +1,57 @@
+{% set nav_items = [
+    ('dashboard', 'dashboard.index', 'Dashboard'),
+    ('properties', 'properties.list_properties', 'Properties'),
+    ('tenants', 'tenants.list_tenants', 'Tenants'),
+    ('leases', 'leases.list_leases', 'Leases'),
+    ('payments', 'payments.list_payments', 'Payments'),
+    ('maintenance', 'maintenance.list_requests', 'Maintenance'),
+] %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}{% endblock %} · Lease Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+</head>
+<body>
+    <header class="app-header">
+        <a class="brand" href="{{ url_for('dashboard.index') if current_user.is_authenticated else url_for('auth.login') }}">Lease Tracker</a>
+        {% if current_user.is_authenticated %}
+        <div class="user">
+            <span>Signed in as <strong>{{ current_user.username }}</strong></span>
+            <a class="logout" href="{{ url_for('auth.logout') }}">Log out</a>
+        </div>
+        {% endif %}
+    </header>
+
+    {% if current_user.is_authenticated %}
+    <div class="app-shell">
+        <nav class="sidebar" aria-label="Main">
+            <ul>
+            {% for blueprint, endpoint, label in nav_items %}
+                <li><a href="{{ url_for(endpoint) }}" class="{{ 'active' if request.blueprint == blueprint }}" {% if request.blueprint == blueprint %}aria-current="page"{% endif %}>{{ label }}</a></li>
+            {% endfor %}
+            </ul>
+        </nav>
+        <main class="main">
+            {% block breadcrumbs %}{% endblock %}
+            <div class="page-header">
+                <h1>{% block heading %}{{ self.title() }}{% endblock %}</h1>
+                <div class="page-actions">{% block actions %}{% endblock %}</div>
+            </div>
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <ul class="flash" role="status">{% for m in messages %}<li>{{ m }}</li>{% endfor %}</ul>
+                {% endif %}
+            {% endwith %}
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+    {% else %}
+    <main class="auth-page">
+        {% block auth_content %}{% endblock %}
+    </main>
+    {% endif %}
+</body>
+</html>

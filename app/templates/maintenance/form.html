@@ -1,48 +1,60 @@
-<!DOCTYPE html>
-<html>
-<head><title>{{'Edit' if maintenance_request else 'New'}} Maintenance Request</title></head>
-<body>
-    <h2>{{'Edit' if maintenance_request else 'New'}} Maintenance Request</h2>
+{% extends 'base.html' %}
+{% from '_form_helpers.html' import breadcrumbs, error_summary, field_error, error_class, form_actions %}
+{% block title %}{{ 'Edit' if maintenance_request else 'New' }} Maintenance Request{% endblock %}
+{% block breadcrumbs %}
+    {% if maintenance_request %}{{ breadcrumbs([('Maintenance', url_for('maintenance.list_requests')), ('Request #' ~ maintenance_request.id, None), ('Edit', None)]) }}
+    {% else %}{{ breadcrumbs([('Maintenance', url_for('maintenance.list_requests')), ('New', None)]) }}{% endif %}
+{% endblock %}
+{% block content %}
+<div class="card form-card">
+    {{ error_summary(errors) }}
+    {% set mr = maintenance_request %}
+    {% if not properties %}
+    <p class="notice">There are no properties yet. <a href="{{url_for('properties.add_property')}}">Add a property</a> first.</p>
+    {% endif %}
     <form method="POST">
-        <label>Property:
-            <select name="property_id" required>
-                {% for p in properties %}
-                <option value="{{p.id}}" {% if maintenance_request and maintenance_request.property_id==p.id %}selected{% endif %}>
-                    {{p.address}}, {{p.city}}
-                </option>
-                {% endfor %}
-            </select>
-        </label><br>
-        <label>Reported By:
-            <select name="reported_by">
-                <option value="tenant" {% if maintenance_request and maintenance_request.reported_by=='tenant' %}selected{% endif %}>Tenant</option>
-                <option value="staff" {% if not maintenance_request or maintenance_request.reported_by=='staff' %}selected{% endif %}>Staff</option>
-            </select>
-        </label><br>
-        <label>Description:<br>
-            <textarea name="description" rows="4" cols="50" required>{{maintenance_request.description if maintenance_request else ''}}</textarea>
-        </label><br>
+    {% set property_id = form_value('property_id', mr.property_id if mr else request.args.get('property_id', ''))|string %}
+    <label class="{{ error_class(errors, 'property_id') }}">Property:
+        <select name="property_id" required>
+            <option value="">-- Select a property --</option>
+            {% for p in properties %}
+            <option value="{{p.id}}" {% if property_id==p.id|string %}selected{% endif %}>
+                {{p.address}}, {{p.city}}
+            </option>
+            {% endfor %}
+        </select>
+    </label>{{ field_error(errors, 'property_id') }}
+    {% set reported_by = form_value('reported_by', mr.reported_by if mr else 'staff') %}
+    <label class="{{ error_class(errors, 'reported_by') }}">Reported By:
+        <select name="reported_by">
+            <option value="tenant" {% if reported_by=='tenant' %}selected{% endif %}>Tenant</option>
+            <option value="staff" {% if reported_by!='tenant' %}selected{% endif %}>Staff</option>
+        </select>
+    </label>{{ field_error(errors, 'reported_by') }}
+    <label class="{{ error_class(errors, 'description') }}">Description:
+        <textarea name="description" rows="4" cols="50" maxlength="2000" required>{{ form_value('description', mr.description if mr else '') }}</textarea>
+    </label>{{ field_error(errors, 'description') }}
 
-        {% if maintenance_request %}
-        <label>Status:
-            <select name="status">
-                <option value="open" {% if maintenance_request.status=='open' %}selected{% endif %}>Open</option>
-                <option value="in_progress" {% if maintenance_request.status=='in_progress' %}selected{% endif %}>In Progress</option>
-                <option value="resolved" {% if maintenance_request.status=='resolved' %}selected{% endif %}>Resolved</option>
-            </select>
-        </label><br>
-        <label>Material Cost: <input type="number" step="0.01" name="material_cost" value="{{maintenance_request.material_cost or ''}}"></label><br>
-        <label>Labor Cost: <input type="number" step="0.01" name="labor_cost" value="{{maintenance_request.labor_cost or ''}}"></label><br>
-        <label>Paid By:
-            <select name="paid_by">
-                <option value="owner" {% if maintenance_request.paid_by=='owner' %}selected{% endif %}>Owner</option>
-                <option value="renter" {% if maintenance_request.paid_by=='renter' %}selected{% endif %}>Renter</option>
-            </select>
-        </label><br>
-        {% endif %}
-
-        <button type="submit">Save</button>
+    {% if mr %}
+    {% set status = form_value('status', mr.status) %}
+    <label class="{{ error_class(errors, 'status') }}">Status:
+        <select name="status">
+            <option value="open" {% if status=='open' %}selected{% endif %}>Open</option>
+            <option value="in_progress" {% if status=='in_progress' %}selected{% endif %}>In Progress</option>
+            <option value="resolved" {% if status=='resolved' %}selected{% endif %}>Resolved</option>
+        </select>
+    </label>{{ field_error(errors, 'status') }}
+    <label class="{{ error_class(errors, 'material_cost') }}">Material Cost: <input type="number" step="0.01" min="0" name="material_cost" value="{{ form_value('material_cost', mr.material_cost) }}"></label>{{ field_error(errors, 'material_cost') }}
+    <label class="{{ error_class(errors, 'labor_cost') }}">Labor Cost: <input type="number" step="0.01" min="0" name="labor_cost" value="{{ form_value('labor_cost', mr.labor_cost) }}"></label>{{ field_error(errors, 'labor_cost') }}
+    {% set paid_by = form_value('paid_by', mr.paid_by) %}
+    <label class="{{ error_class(errors, 'paid_by') }}">Paid By:
+        <select name="paid_by">
+            <option value="owner" {% if paid_by=='owner' %}selected{% endif %}>Owner</option>
+            <option value="renter" {% if paid_by=='renter' %}selected{% endif %}>Renter</option>
+        </select>
+    </label>{{ field_error(errors, 'paid_by') }}
+    {% endif %}
+        {{ form_actions(url_for('maintenance.list_requests'), 'Save changes' if maintenance_request else 'Submit request') }}
     </form>
-    <a href="{{url_for('maintenance.list_requests')}}">Back to list</a>
-</body>
-</html>
+</div>
+{% endblock %}

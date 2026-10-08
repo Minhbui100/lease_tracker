@@ -1,0 +1,49 @@
+{% macro breadcrumbs(items) %}
+    {# items: list of (label, url) pairs; the last item is the current page and should have url None #}
+    <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <ol>
+            <li><a href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
+            {% for label, url in items %}
+                {% if url and not loop.last %}
+                    <li><a href="{{ url }}">{{ label }}</a></li>
+                {% else %}
+                    <li aria-current="page">{{ label }}</li>
+                {% endif %}
+            {% endfor %}
+        </ol>
+    </nav>
+{% endmacro %}
+
+{% macro error_summary(errors) %}
+    {% if errors %}
+        <div class="error-summary" role="alert">
+            <strong>Please fix the {{ 'problem' if errors|length == 1 else errors|length ~ ' problems' }} below and try again:</strong>
+            <ul>
+            {% for message in errors.values() %}
+                <li>{{ message }}</li>
+            {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+{% endmacro %}
+
+{% macro field_error(errors, name) %}
+    {% if errors and errors.get(name) %}<span class="field-error">{{ errors[name] }}</span>{% endif %}
+{% endmacro %}
+
+{% macro error_class(errors, name) %}{% if errors and errors.get(name) %}has-error{% endif %}{% endmacro %}
+
+{% macro form_actions(cancel_url, submit_label='Save') %}
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">{{ submit_label }}</button>
+        <a class="btn btn-secondary" href="{{ cancel_url }}">Cancel</a>
+    </div>
+{% endmacro %}
+
+{% macro delete_button(action, confirm_text, label='Delete') %}
+    <form method="POST" action="{{ action }}">
+        <button type="submit" class="btn btn-danger btn-sm" onclick='return confirm({{ confirm_text|tojson }});'>{{ label }}</button>
+    </form>
+{% endmacro %}
+
+{% macro badge(value) %}{% if value %}<span class="badge badge-{{ value }}">{{ value|replace('_', ' ')|capitalize }}</span>{% else %}-{% endif %}{% endmacro %}

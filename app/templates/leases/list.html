@@ -1,48 +1,49 @@
-<!DOCTYPE html>
-<html>
-    <head><title>Leases</title></head>
-    <body>
-        <h2>Leases</h2>
-        <a href="{{url_for('leases.add_lease')}}">Add leases</a>
-
-        {%with messages=get_flashed_messages()%}
-            {%if messages%}
-                <ul>{%for m in messages%}<li>{{m}}</li>{%endfor%}</ul>
-            {%endif%}
-        {%endwith%}
-
-        <table border="1" cellpadding="6">
-            <tr>
-                <th>Address</th>
-                <th>Tenants</th>
-                <th>Start Date - End Date</th>
-                <th>Rent</th>
-                <th>Refundable Deposit</th>
-                <th>Nonrefundable Deposit</th>
-                <th>Cars</th>
-                <th>Pets</th>
-                <th>Status</th>
-                <th>Action</th>
-            </tr>
-            {%for lease in leases%}
-            <tr>
-                <td>{{lease.property.address}} {{lease.property.city}}, {{lease.property.state}}</td>
-                <td>{%for t in lease.tenants%}{{t.first_name}} {{t.last_name}}{%if not loop.last%}, {%endif%}{%endfor%}</td>
-                <td>{{lease.start_date}} - {{lease.end_date}}</td>
-                <td>{{lease.monthly_rent}}</td>
-                <td>{{lease.refundable_deposit or '-'}}</td>
-                <td>{{lease.nonrefundable_deposit or '-'}}</td>
-                <td>{{lease.cars or '0'}}</td>
-                <td>{{lease.pets or '0'}}</td>
-                <td>{{lease.status or '-'}}</td>
-                <td>
-                    <a href="{{url_for('leases.edit_lease', lease_id=lease.id)}}">Edit</a>
-                    <form method="POST" action="{{url_for('leases.delete_lease', lease_id=lease.id)}}" style="display:inline">
-                        <button type="submit" onclick="return confirm('Delete this lease?');">Delete</button>
-                    </form>
-                </td>
-            </tr>
-            {%endfor%}
-        </table>
-    </body>
-</html>
+{% extends 'base.html' %}
+{% from '_form_helpers.html' import breadcrumbs, delete_button, badge %}
+{% block title %}Leases{% endblock %}
+{% block breadcrumbs %}{{ breadcrumbs([('Leases', None)]) }}{% endblock %}
+{% block actions %}<a class="btn btn-primary" href="{{url_for('leases.add_lease')}}">+ Add lease</a>{% endblock %}
+{% block content %}
+<div class="table-wrap">
+    {% if leases %}
+    <table class="data">
+        <tr>
+            <th>Address</th>
+            <th>Tenants</th>
+            <th>Start Date - End Date</th>
+            <th>Rent</th>
+            <th>Refundable Deposit</th>
+            <th>Nonrefundable Deposit</th>
+            <th>Cars</th>
+            <th>Pets</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+        {%for lease in leases%}
+        <tr>
+            <td><a href="{{url_for('properties.view_property', property_id=lease.property_id)}}">{{lease.property.address}} {{lease.property.city}}, {{lease.property.state}}</a></td>
+            <td>{%for t in lease.tenants%}{{t.first_name}} {{t.last_name}}{%if not loop.last%}, {%endif%}{%endfor%}</td>
+            <td>{{lease.start_date}} - {{lease.end_date}}</td>
+            <td>{{lease.monthly_rent}}</td>
+            <td>{{lease.refundable_deposit or '-'}}</td>
+            <td>{{lease.nonrefundable_deposit or '-'}}</td>
+            <td>{{lease.cars or '0'}}</td>
+            <td>{{lease.pets or '0'}}</td>
+            <td>{{ badge(lease.status) }}</td>
+            <td>
+                <div class="row-actions">
+                    <a class="btn btn-secondary btn-sm" href="{{url_for('leases.edit_lease', lease_id=lease.id)}}">Edit</a>
+                    {{ delete_button(url_for('leases.delete_lease', lease_id=lease.id), 'Delete the lease for ' ~ lease.property.address ~ '?') }}
+                </div>
+            </td>
+        </tr>
+        {%endfor%}
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <p>No leases yet. A lease links a property to one or more tenants.</p>
+        <a class="btn btn-primary" href="{{url_for('leases.add_lease')}}">+ Add lease</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -2,7 +2,9 @@ from flask import Blueprint, render_template, redirect, url_for, request, flash
 from flask_login import login_required
 from app import db
 from app.models import Property, MaintenanceRequest, Image
-from datetime import datetime, timezone
+from app.validation import FormValidator, ZIP_RE
+from datetime import date, datetime, timezone
+from decimal import Decimal
 
 properties_bp=Blueprint('properties', __name__, url_prefix='/properties')
 
@@ -12,75 +14,74 @@ def list_properties():
     properties=Property.query.order_by(Property.state, Property.city, Property.zip, Property.id).all()
     return render_template('properties/list.html', properties=properties)
 
+PROPERTY_TYPES={'single-family', 'multi-family'}
+PROPERTY_FIELDS=('address', 'city', 'state', 'zip', 'county', 'property_type',
+                 'year_built', 'current_value', 'bedrooms', 'bathrooms', 'area')
+
+
+def validate_property_form(form, property_id=None):
+    """Returns (cleaned_data, errors) for the property add/edit form."""
+    v=FormValidator(form)
+    data={
+        'address': v.string('address', 'Address', required=True, max_length=250),
+        'city': v.string('city', 'City', required=True, max_length=100),
+        'state': v.string('state', 'State', required=True, max_length=100),
+        'zip': v.string('zip', 'Zipcode', required=True, max_length=10, pattern=ZIP_RE,
+                        pattern_message='Zipcode must be 5 digits (e.g. 12345) or ZIP+4 (e.g. 12345-6789).'),
+        'county': v.string('county', 'County', required=True, max_length=100),
+        'property_type': v.choice('property_type', 'Property type', PROPERTY_TYPES, required=True),
+        'year_built': v.integer('year_built', 'Year built', min_value=1700, max_value=date.today().year+2),
+        'current_value': v.decimal('current_value', 'Current value', min_value=0, max_value=Decimal('9999999999.99')),
+        'bedrooms': v.integer('bedrooms', 'Bedrooms', min_value=0, max_value=50),
+        'bathrooms': v.decimal('bathrooms', 'Bathrooms', min_value=0, max_value=Decimal('9.99')),
+        'area': v.decimal('area', 'Area', min_value=Decimal('0.01'), max_value=Decimal('9999999999.99')),
+    }
+
+    if data['address'] and data['city']:
+        duplicate=Property.query.filter(
+            db.func.lower(Property.address)==data['address'].lower(),
+            db.func.lower(Property.city)==data['city'].lower(),
+        )
+        if property_id is not None:
+            duplicate=duplicate.filter(Property.id!=property_id)
+        if duplicate.first():
+            v.add_error('address', f"A property at {data['address']}, {data['city']} already exists.")
+
+    return data, v.errors
+
+
 @properties_bp.route('/new', methods=['GET', 'POST'])
 @login_required
 def add_property():
     if request.method=='POST':
-        address=request.form['address']
-        city=request.form['city']
-        existing=Property.query.filter_by(address=address, city=city).first()
-        if existing:
-            flash('This property exists in the system')
-            unsaved = Property(
-                address=address,
-                city=city,
-                state=request.form['state'],
-                zip=request.form['zip'],
-                county=request.form['county'],
-                property_type=request.form['property_type'],
-                year_built=request.form['year_built'] or None,
-                current_value=request.form['current_value'] or None,
-                bedrooms=request.form['bedrooms'] or None,
-                bathrooms=request.form['bathrooms'] or None,
-                area=request.form['area'] or None,
-            )
-            return render_template('properties/form.html', property=unsaved)
+        data, errors=validate_property_form(request.form)
+        if errors:
+            return render_template('properties/form.html', property=None, errors=errors), 400
 
-        
-        property=Property(
-            address=request.form['address'],
-            city=request.form['city'],
-            state=request.form['state'],
-            zip=request.form['zip'],
-            county=request.form['county'],
-            property_type=request.form['property_type'],
-            year_built=request.form['year_built'] or None,
-            current_value=request.form['current_value'] or None,
-            bedrooms=request.form['bedrooms'] or None,
-            bathrooms=request.form['bathrooms'] or None,
-            area=request.form['area'] or None,
-            is_occupied=False,
-        )
-        
+        property=Property(is_occupied=False, **data)
         db.session.add(property)
         db.session.commit()
         flash('Property added successfully')
         return redirect(url_for('properties.list_properties'))
 
-    return render_template('properties/form.html', property=None)
+    return render_template('properties/form.html', property=None, errors={})
 
 @properties_bp.route('/<int:property_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_property(property_id):
     property=Property.query.get_or_404(property_id)
     if request.method=='POST':
-        property.address=request.form['address']
-        property.city=request.form['city']
-        property.state=request.form['state']
-        property.zip=request.form['zip']
-        property.county=request.form['county']
-        property.property_type=request.form['property_type']
-        property.year_built=request.form['year_built'] or None
-        property.current_value=request.form['current_value'] or None
-        property.bedrooms=request.form['bedrooms'] or None
-        property.bathrooms=request.form['bathrooms'] or None
-        property.area=request.form['area'] or None
-    
+        data, errors=validate_property_form(request.form, property_id=property.id)
+        if errors:
+            return render_template('properties/form.html', property=property, errors=errors), 400
+
+        for field in PROPERTY_FIELDS:
+            setattr(property, field, data[field])
         db.session.commit()
         flash('Property updated successfully')
         return redirect(url_for('properties.list_properties'))
 
-    return render_template('properties/form.html', property=property)
+    return render_template('properties/form.html', property=property, errors={})
 
 
 @properties_bp.route('/<int:property_id>/delete', methods=['POST'])
@@ -118,13 +119,14 @@ def allowed_file(filename):
 @properties_bp.route('/<int:property_id>/images/add', methods=['POST'])
 @login_required
 def add_image(property_id):
+    Property.query.get_or_404(property_id)
     file = request.files.get('photo')
 
     if not file or file.filename == '':
         flash('Please choose a photo to upload.')
         return redirect(url_for('properties.view_property', property_id=property_id))
 
-    if not allowed_file(file.filename):
+    if not allowed_file(file.filename) or not (file.mimetype or '').startswith('image/'):
         flash('Unsupported file type. Please upload a PNG, JPG, GIF, or WEBP image.')
         return redirect(url_for('properties.view_property', property_id=property_id))
 
@@ -143,7 +145,7 @@ def add_image(property_id):
 @properties_bp.route('/<int:property_id>/images/<int:image_id>/delete', methods=['POST'])
 @login_required
 def delete_image(property_id, image_id):
-    image = Image.query.get_or_404(image_id)
+    image = Image.query.filter_by(id=image_id, property_id=property_id).first_or_404()
 
     file_path = os.path.join(current_app.root_path, 'static', 'uploads', image.link)
     if os.path.exists(file_path):
