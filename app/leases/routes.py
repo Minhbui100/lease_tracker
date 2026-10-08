@@ -5,6 +5,7 @@ from app.models import Lease, Property, Tenant
 from app.validation import FormValidator
 from datetime import date
 from decimal import Decimal
+from datetime import date, datetime, timezone
 
 leases_bp=Blueprint('leases', __name__, url_prefix='/leases')
 
@@ -43,8 +44,6 @@ def validate_lease_form(form, lease=None):
         'cars': v.integer('cars', 'Cars', min_value=0, max_value=20),
         'pets': v.integer('pets', 'Pets', min_value=0, max_value=20),
     }
-    if lease is not None:
-        data['status']=v.choice('status', 'Status', LEASE_STATUSES, required=True)
 
     if data['start_date'] and data['end_date'] and data['end_date']<=data['start_date']:
         v.add_error('end_date', 'End date must be after start date.')
@@ -120,12 +119,11 @@ def edit_lease(lease_id):
         lease.nonrefundable_deposit=data['nonrefundable_deposit']
         lease.cars=data['cars']
         lease.pets=data['pets']
-        lease.status=data['status']
         lease.tenants=data['tenants']
 
-        if lease.end_date<date.today() and lease.status=='active':
-            lease.status='expired'
-            flash('This lease is automatically set as expired because end date has passed.')
+        if lease.status!='terminated':
+            lease.status='expired' if lease.end_date<date.today() else 'active'
+        lease.property.is_occupied=any(l.status=='active' for l in lease.property.leases)
 
         db.session.commit()
         flash('Lease updated successfully')
@@ -150,6 +148,32 @@ def delete_lease(lease_id):
     db.session.commit()
     flash('Lease deleted successfully')
     return redirect(url_for('leases.list_leases'))
+
+@leases_bp.route('/<int:lease_id>/terminate', methods=['POST'])
+@login_required
+def terminate_lease(lease_id):
+    lease=Lease.query.get_or_404(lease_id)
+    reason=request.form.get('reason', '').strip()
+
+    if lease.status!='active':
+        flash('Only active leases can be terminated.')
+        return redirect(url_for('leases.list_leases'))
+    elif not reason:
+        flash('Please enter a reason for termination.')
+        return redirect(url_for('leases.list_leases'))
+    elif len(reason)>255:
+        flash('The reason is too long. Please write fewer than 255 characters.')
+        return redirect(url_for('leases.list_leases'))
+
+    lease.status='terminated'
+    lease.termination_reason=reason
+    lease.terminated_at=datetime.now(timezone.utc)
+    lease.property.is_occupied=any(l.status=='active' for l in lease.property.leases)
+
+    db.session.commit()
+    flash('Lease terminated.')
+    return redirect(url_for('leases.list_leases')) 
+    
 
 
 

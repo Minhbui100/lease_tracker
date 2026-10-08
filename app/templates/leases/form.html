@@ -17,8 +17,12 @@
     {% endif %}
 
     <form method="POST">
+        
         {% set property_id = form_value('property_id', lease.property_id if lease else '')|string %}
-        <label class="{{ error_class(errors, 'property_id') }}">Property:
+        <label class="{{ error_class(errors, 'property_id') }}">Property: 
+            {% if not lease %}
+            <a class="btn btn-secondary btn-sm" href="{{ url_for('properties.add_property') }}" target="_blank" rel="noopener">+ Add property</a>
+            {% endif %}
             <select name="property_id" required {%if lease%}disabled{%endif%}>
                 <option value="">-- Select a property --</option>
                 {%for p in properties%}
@@ -33,6 +37,7 @@
         </label>{{ field_error(errors, 'property_id') }}
         {% set selected_tenants = form_values('tenant_ids', lease.tenants|map(attribute='id') if lease else []) %}
         <label class="{{ error_class(errors, 'tenant_ids') }}">Tenants (Select one or more):
+            <a class="btn btn-secondary btn-sm" href="{{ url_for('tenants.new_tenant') }}" target="_blank" rel="noopener">+ Add tenant</a>
             <select name="tenant_ids" multiple size="5" required>
                 {%for tenant in tenants%}
                     <option value="{{tenant.id}}" {%if tenant.id|string in selected_tenants%}selected{%endif%}>
@@ -50,17 +55,9 @@
         <label class="{{ error_class(errors, 'cars') }}">Cars: <input type="number" min="0" max="20" name="cars" value="{{ form_value('cars', lease.cars if lease else 0) }}"></label>{{ field_error(errors, 'cars') }}
         <label class="{{ error_class(errors, 'pets') }}">Pets: <input type="number" min="0" max="20" name="pets" value="{{ form_value('pets', lease.pets if lease else 0) }}"></label>{{ field_error(errors, 'pets') }}
 
-        {%if lease%}
-        {% set status = form_value('status', lease.status) %}
-        <label class="{{ error_class(errors, 'status') }}">Status:
-            <select name="status">
-                <option value="active" {%if status=='active'%}selected{%endif%}>Active</option>
-                <option value="expired" {%if status=='expired'%}selected{%endif%}>Expired</option>
-                <option value="terminated" {%if status=='terminated'%}selected{%endif%}>Terminated</option>
-            </select>
-        </label>{{ field_error(errors, 'status') }}
-        {%endif%}
+        
         {{ form_actions(url_for('leases.list_leases'), 'Save changes' if lease else 'Add lease') }}
     </form>
 </div>
 {% endblock %}
+

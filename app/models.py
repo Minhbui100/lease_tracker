@@ -1,5 +1,5 @@
 from app import db
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 
@@ -24,6 +24,7 @@ class Property(db.Model):
     leases=db.relationship('Lease', backref='property', lazy=True)
     maintenance_requests=db.relationship('MaintenanceRequest', backref='property', lazy=True)
     images=db.relationship('Image', backref='property', lazy=True)
+    expenses = db.relationship('PropertyExpense', backref='property', lazy=True, cascade='all, delete-orphan')
 
 
 
@@ -57,6 +58,8 @@ class Lease(db.Model):
     pets=db.Column(db.Integer)
     status=db.Column(db.String(20), default='active')
     created_at=db.Column(db.DateTime, default=datetime.utcnow)
+    termination_reason = db.Column(db.String(255))
+    terminated_at = db.Column(db.DateTime)
 
     payments=db.relationship('Payment', backref='lease', lazy=True)
     dependents=db.relationship('Dependence', backref='lease', lazy=True)
@@ -119,6 +122,37 @@ class Image(db.Model):
     id=db.Column(db.Integer, primary_key=True)
     link=db.Column(db.Text, nullable=False)
     property_id=db.Column(db.Integer, db.ForeignKey('property.id'), nullable=False)
+
+EXPENSE_CATEGORIES = {
+    'down_payment': 'Down payment',
+    'closing_costs': 'Closing costs',
+    'mortgage': 'Mortgage',
+    'hoa': 'HOA',
+    'property_tax': 'Property tax',
+    'insurance': 'Insurance',
+    'utilities': 'Utilities',
+    'management_fee': 'Management fee',
+    'remodel': 'Remodel',
+    'legal': 'Legal',
+    'other': 'Other',
+}
+
+class PropertyExpense(db.Model):
+    __tablename__='property_expense'
+    id=db.Column(db.Integer, primary_key=True)
+    property_id=db.Column(db.Integer, db.ForeignKey('property.id'), nullable=False)
+    category=db.Column(db.String(40), nullable=False)
+    amount=db.Column(db.Numeric(12,2), nullable=False)
+    expense_date=db.Column(db.Date, nullable=False)
+    memo=db.Column(db.String(100))
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (
+        db.CheckConstraint(
+            "category in (" + ", ".join(f"'{key}'" for key in EXPENSE_CATEGORIES) + ")",
+            name='ck_property_expense_category'),
+    )
+
 
 
 from flask_login import UserMixin
