@@ -1,10 +1,11 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify
 from flask_login import login_required
 from app import db
-from app.models import Property, MaintenanceRequest, Image
+from app.models import Property, MaintenanceRequest, Image, PropertyExpense, Payment, Lease, MaintenanceRequest
 from app.validation import FormValidator, ZIP_RE
 from datetime import date, datetime, timezone
 from decimal import Decimal
+from sqlalchemy import func
 
 properties_bp=Blueprint('properties', __name__, url_prefix='/properties')
 
@@ -96,15 +97,94 @@ def delete_property(property_id):
     flash('Property deleted successfully')
     return redirect(url_for('properties.list_properties'))
 
+EXPENSE_CATEGORIES = {
+        'down_payment': 'Down payment',
+        'closing_costs': 'Closing costs',
+        'mortgage': 'Mortgage',
+        'hoa': 'HOA',
+        'property_tax': 'Property tax',
+        'insurance': 'Insurance',
+        'utilities': 'Utilities',
+        'management_fee': 'Management fee',
+        'remodel': 'Remodel',
+        'legal': 'Legal',
+        'other': 'Other',
+    }
 
 @properties_bp.route('/<int:property_id>')
 @login_required
 def view_property(property_id):
+    
     property_obj=Property.query.get_or_404(property_id)
     maintenance_history=MaintenanceRequest.query.filter_by(property_id=property_id).order_by(MaintenanceRequest.submission_time.desc()).all()
-    return render_template('properties/detail.html', property=property_obj, maintenance_history=maintenance_history)
+
+    #cash_in is all payments from the property's tenants
+    cash_in=Decimal(db.session.query(func.coalesce(func.sum(Payment.amount), 0))
+                    .join(Lease, Payment.lease_id==Lease.id)
+                    .filter(Lease.property_id==property_id, Payment.status=='paid')
+                    .scalar())
+
+    #cash_out is maintenance and property expenses
+    maintenance_out=Decimal(db.session.query(func.coalesce(func.sum(func.coalesce(MaintenanceRequest.labor_cost,0)+func.coalesce(MaintenanceRequest.material_cost,0)),0 ))
+                            .filter(MaintenanceRequest.property_id==property_id, MaintenanceRequest.paid_by=='owner')
+                            .scalar())
+
+    expenses=PropertyExpense.query.filter_by(property_id=property_id).order_by(PropertyExpense.expense_date.desc()).all()
+    expenses_out=sum((e.amount for e in expenses), Decimal('0'))
+
+    cash_out=maintenance_out+expenses_out
+    balance=cash_in-cash_out
+
+    category_totals={key: Decimal('0') for key in EXPENSE_CATEGORIES}
+    for e in expenses:
+        category_totals[e.category]+=e.amount
+    
+    return render_template('properties/detail.html', property=property_obj, maintenance_history=maintenance_history, 
+                           expenses=expenses, categories=EXPENSE_CATEGORIES, maintenance_out=maintenance_out,
+                           cash_in=cash_in, cash_out=cash_out, balance=balance, category_totals=category_totals)
 
 
+@properties_bp.route('/<int:property_id>/expenses/add', methods=['POST'])
+@login_required
+def add_expense(property_id):
+    Property.query.get_or_404(property_id)
+    v=FormValidator(request.form)
+    data={
+        'category':v.choice('category', 'Category', set(EXPENSE_CATEGORIES), required=True),
+        'amount':v.decimal('amount', 'Amount', required=True, min_value=Decimal('0.01'), max_value=Decimal('9999999999.99')),
+        'expense_date':v.date('expense_date', 'Date', required=True, min_value=date(1900,1,1)),
+        'memo':v.string('memo', 'Memo', max_length=100),
+    }
+    if v.errors:
+        for msg in v.errors.values():
+            flash(msg if isinstance(msg, str) else ' '.join(msg))
+        return redirect(url_for('properties.view_property', property_id=property_id))
+
+    db.session.add(PropertyExpense(property_id=property_id, **data))
+    db.session.commit()
+    flash('Expense added')
+    return redirect(url_for('properties.view_property', property_id=property_id)) 
+
+@properties_bp.route('/<int:property_id>/expenses/<int:expense_id>/delete', methods=['POST'])
+@login_required
+def delete_expense(property_id, expense_id):
+    expense=PropertyExpense.query.filter_by(id=expense_id, property_id=property_id).first()
+    db.session.delete(expense)
+    db.commit()
+    flash('Expense deleted')
+    return redirect(url_for('properties.view_property', property_id=property_id)) 
+
+
+"""class PropertyExpense(db.Model):
+    __tablename__='property_expense'
+    id=db.Column(db.Integer, primary_key=True)
+    property_id=db.Column(db.Integer, db.ForeignKey('property.id'), nullable=False)
+    category=db.Column(db.String(40), nullable=False)
+    amount=db.Column(db.Numeric(12,2), nullable=False)
+    expense_date=db.Column(db.Date, nullable=False)
+    memo=db.Column(db.String(100))
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+"""
 
 import os
 from werkzeug.utils import secure_filename
