@@ -1,7 +1,7 @@
 from flask import url_for, redirect, render_template, flash, Blueprint, request
 from flask_login import login_required
 from app import db
-from app.models import Payment, Lease
+from app.models import Payment, Lease, PAYMENT_CATEGORIES
 from app.validation import FormValidator
 from datetime import date
 from decimal import Decimal
@@ -22,6 +22,7 @@ def validate_payment_form(form, lease_query):
         'memo': v.string('memo', 'Memo', max_length=50),
         'pay_type': v.choice('pay_type', 'Pay type', PAY_TYPES),
         'status': v.choice('status', 'Status', PAYMENT_STATUSES, default='pending'),
+        'category': v.choice('category', 'Category', set(PAYMENT_CATEGORIES), required=True),
     }
     if data['status']=='paid' and not data['pay_type'] and 'pay_type' not in v.errors:
         v.add_error('pay_type', 'Please select a pay type for a paid payment.')
@@ -35,6 +36,7 @@ def apply_payment_data(payment, data):
     payment.memo=data['memo']
     payment.pay_type=data['pay_type']
     payment.status=data['status']
+    payment.category=data['category']
 
 
 @payments_bp.route('/')
@@ -50,7 +52,7 @@ def add_payment():
     if request.method=='POST':
         data, errors=validate_payment_form(request.form, active_leases)
         if errors:
-            return render_template('payments/form.html', payment=None, leases=active_leases.order_by(Lease.id).all(), errors=errors), 400
+            return render_template('payments/form.html', payment=None, leases=active_leases.order_by(Lease.id).all(), errors=errors, payment_categories=PAYMENT_CATEGORIES), 400
 
         payment=Payment()
         apply_payment_data(payment, data)
@@ -58,7 +60,7 @@ def add_payment():
         db.session.commit()
         flash('Payment added successfully')
         return redirect(url_for('payments.list_payments'))
-    return render_template('payments/form.html', payment=None, leases=active_leases.order_by(Lease.id).all(), errors={})
+    return render_template('payments/form.html', payment=None, leases=active_leases.order_by(Lease.id).all(), errors={}, payment_categories=PAYMENT_CATEGORIES)
 
 @payments_bp.route('/<int:payment_id>/edit', methods=['GET', 'POST'])
 @login_required
@@ -68,13 +70,13 @@ def edit_payment(payment_id):
     if request.method=='POST':
         data, errors=validate_payment_form(request.form, Lease.query)
         if errors:
-            return render_template('payments/form.html', leases=leases, payment=payment, errors=errors), 400
+            return render_template('payments/form.html', leases=leases, payment=payment, errors=errors, payment_categories=PAYMENT_CATEGORIES), 400
 
         apply_payment_data(payment, data)
         db.session.commit()
         flash('Payment updated successfully')
         return redirect(url_for('payments.list_payments'))
-    return render_template('payments/form.html', leases=leases, payment=payment, errors={})
+    return render_template('payments/form.html', leases=leases, payment=payment, errors={}, payment_categories=PAYMENT_CATEGORIES)
 
 
 @payments_bp.route('/<int:payment_id>/delete', methods=['POST'])

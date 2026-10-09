@@ -35,6 +35,13 @@
             <option value="bank transfer" {% if pay_type=='bank transfer' %}selected{% endif %}>Bank Transfer</option>
         </select>
     </label>{{ field_error(errors, 'pay_type') }}
+    <label>Category:
+        <select name="category" required>
+            {% for key, label in payment_categories.items() %}
+            <option value="{{key}}" {% if payment and payment.category==key %}selected{% endif %}>{{label}}</option>
+            {% endfor %}
+        </select>
+    </label><br>
     <label class="{{ error_class(errors, 'memo') }}">Memo: <input type="text" name="memo" maxlength="50" value="{{ form_value('memo', payment.memo if payment else '') }}"></label>{{ field_error(errors, 'memo') }}
     {% set status = form_value('status', payment.status if payment else 'pending') %}
     <label class="{{ error_class(errors, 'status') }}">Status:

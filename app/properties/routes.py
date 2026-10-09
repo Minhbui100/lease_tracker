@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify
 from flask_login import login_required
 from app import db
-from app.models import Property, MaintenanceRequest, Image, PropertyExpense, Payment, Lease, MaintenanceRequest
+from app.models import Property, MaintenanceRequest, Image, PropertyExpense, Payment, Lease, MaintenanceRequest, PAYMENT_CATEGORIES
 from app.validation import FormValidator, ZIP_RE
 from datetime import date, datetime, timezone
 from decimal import Decimal
@@ -119,10 +119,13 @@ def view_property(property_id):
     maintenance_history=MaintenanceRequest.query.filter_by(property_id=property_id).order_by(MaintenanceRequest.submission_time.desc()).all()
 
     #cash_in is all payments from the property's tenants
-    cash_in=Decimal(db.session.query(func.coalesce(func.sum(Payment.amount), 0))
-                    .join(Lease, Payment.lease_id==Lease.id)
-                    .filter(Lease.property_id==property_id, Payment.status=='paid')
-                    .scalar())
+    income_rows=dict(db.session.query(Payment.category, func.sum(Payment.amount))
+                     .join(Lease, Payment.lease_id==Lease.id)
+                     .filter(Lease.property_id==property_id, Payment.status=='paid')
+                     .group_by(Payment.category)
+                     .all())
+    income_totals={key: Decimal(income_rows.get(key) or 0) for key in PAYMENT_CATEGORIES}
+    cash_in=sum(income_totals.values(), Decimal('0'))
 
     #cash_out is maintenance and property expenses
     maintenance_out=Decimal(db.session.query(func.coalesce(func.sum(func.coalesce(MaintenanceRequest.labor_cost,0)+func.coalesce(MaintenanceRequest.material_cost,0)),0 ))
@@ -141,7 +144,8 @@ def view_property(property_id):
     
     return render_template('properties/detail.html', property=property_obj, maintenance_history=maintenance_history, 
                            expenses=expenses, categories=EXPENSE_CATEGORIES, maintenance_out=maintenance_out,
-                           cash_in=cash_in, cash_out=cash_out, balance=balance, category_totals=category_totals)
+                           cash_in=cash_in, cash_out=cash_out, balance=balance, category_totals=category_totals,
+                           income_totals=income_totals, payment_categories=PAYMENT_CATEGORIES)
 
 
 @properties_bp.route('/<int:property_id>/expenses/add', methods=['POST'])

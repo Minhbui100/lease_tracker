@@ -12,6 +12,7 @@
             <th>Due Date</th>
             <th>Amount</th>
             <th>Pay Type</th>
+            <th>Category</th>
             <th>Memo</th>
             <th>Status</th>
             <th>Actions</th>
@@ -22,6 +23,7 @@
             <td>{{p.due_date}}</td>
             <td>${{p.amount}}</td>
             <td>{{p.pay_type or '-'}}</td>
+            <td>{{p.category}}</td>
             <td>{{p.memo or '-'}}</td>
             <td>{{ badge(p.status) }}</td>
             <td>

@@ -70,6 +70,11 @@ class LeaseTenant(db.Model):
     lease_id=db.Column(db.Integer, db.ForeignKey('lease.id'), primary_key=True)
 
 
+PAYMENT_CATEGORIES={
+    'rent':'Rent',
+    'deposit':'Deposit',
+    'other':'Other',
+}
 class Payment(db.Model):
     __tablename__='payment'
     id=db.Column(db.Integer, primary_key=True)
@@ -80,6 +85,7 @@ class Payment(db.Model):
     pay_type=db.Column(db.String(20))
     status=db.Column(db.String(20), default='pending')
     created_at=db.Column(db.DateTime, default=datetime.utcnow)
+    category = db.Column(db.String(20), nullable=False, default='rent', server_default='rent')
 
 
 class MaintenanceRequest(db.Model):
@@ -95,8 +101,6 @@ class MaintenanceRequest(db.Model):
     labor_cost=db.Column(db.Numeric(20,2))
     paid_by=db.Column(db.String(20), default='owner')
     created_at=db.Column(db.DateTime, default=datetime.utcnow)
-
-
 
 class EmergencyContact(db.Model):
     __tablename__='emergency_contact'

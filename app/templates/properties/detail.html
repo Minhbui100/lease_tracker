@@ -146,10 +146,15 @@
                 {% endif %}
             {% endfor %}
 
-            <tr>
-                <td><strong>Cash in (rent paid)</strong></td>
-                <td><strong>${{ '{:,.2f}'.format(cash_in) }}</strong></td>
-            </tr>
+            {% for key, label in payment_categories.items() %}
+                {% if income_totals[key] %}
+                <tr>
+                    <td>{{ label }} (paid)</td>
+                    <td>${{ '{:,.2f}'.format(income_totals[key]) }}</td>
+                </tr>
+                {% endif %}
+            {% endfor %}
+
             <tr>
                 <td><strong>Balance</strong></td>
                 <td><strong style="color: {{ '#b00020' if balance < 0 else '#1a7f37' }};">
@@ -192,6 +197,5 @@
     <p>No expenses recorded yet.</p>
     {% endif %}
 </div>
-
 
 {% endblock %}
