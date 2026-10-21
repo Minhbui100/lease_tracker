@@ -126,11 +126,6 @@ flask db upgrade
 
 Always open the generated file in `migrations/versions/` before upgrading. Alembic reads a column rename as a drop plus an add, which would delete data, and it does not detect changes to `CHECK` constraints, so those need a hand-written migration.
 
-## Known limitations
-
-- Each property is leased as a whole. There is no separate unit table, so a multi-family building can only have one lease at a time.
-- The `emergency_contact` and `dependence` tables exist, but there are no pages for them yet.
-- Cash flow is an all-time total. Payments store a due date but not the date they were actually paid, so there is no monthly or yearly view.
 - Forms do not have CSRF protection yet.
 - Photos are saved to the local disk, so they are not shared across servers.
 - The scheduled jobs depend on the app staying up. For a real deployment, run them with a proper scheduler.
